@@ -1,0 +1,90 @@
+<html>
+<head>
+<title>model process</title>
+<script>
+function process()
+{
+	var m = document.getElementById('ms').value;
+	var data = m.split('\n');
+	var i = 5;
+	var line = data[i];
+	var parts = line.split(' ');
+	var n_meshes = parseInt(parts[1]);
+	if (n_meshes != 1)
+		alert("lol u should have exactly 1 mesh");
+	i++;
+	
+	line = data[i];
+	var name = line.split(' ')[0];
+	name = name.substring(1, name.length - 1);
+	alert(name + " name");
+	i++;
+	
+	var num_verts = parseInt(data[i]);
+	alert(num_verts + " verts");
+	var vert_data = [];
+	var uv_data = [];
+	i++;
+	for (var j = 0; j < num_verts; j++)
+	{
+		line = data[i + j];
+		parts = line.split(' ');
+		for (var x = 1; x < 4; x++)
+			vert_data.push(parseFloat(parts[x]));
+		for (var x = 4; x < 6; x++)
+			uv_data.push(parseFloat(parts[x]));
+	}
+	i += num_verts;
+	
+	var num_normals = parseInt(data[i]);
+	alert(num_normals + " normals");
+	i++;
+	i += num_normals;
+	
+	var f_verts = [];
+	var f_uvs = [];
+	
+	var num_tris = parseInt(data[i]);
+	alert(num_tris + " tris");
+	i++;
+	for (var j = 0; j < num_tris; j++)
+	{
+		var idxs = data[i + j].split(' ');
+		for (var x = 1; x < 4; x++)
+		{
+			var idx = idxs[x];
+			for (var k = 0; k < 3; k++)
+			{
+				f_verts.push(vert_data[idx*3 + k]);
+			}
+			for (var k = 0; k < 2; k++)
+			{
+				f_uvs.push(uv_data[idx*2 + k]);
+			}
+		}
+	}
+	
+	var mesh = {count: num_tris, vertices: f_verts, uvs: f_uvs};
+
+	var output = document.getElementById('out');
+	output.value = name + " = " + JSON.stringify(mesh);
+}
+
+</script>
+</head>
+<body>
+<span style="font-size: 18pt; font-weight: bold;">MilkShape ASCII -> JS Model Convertar&nbsp;</span><span style="font-size: 11pt;">by greg</span><br /><br />
+
+<br />
+<input value="process" type="button" onClick="process();" />
+
+ASCII:
+<textarea id="ms" style="width: 100%; height:100px;"></textarea>
+<br />
+JS:
+<textarea id="out" style="width: 100%; height:100px;"></textarea>
+<br />
+
+<br /><br />
+</body>
+</html>

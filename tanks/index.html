@@ -1,0 +1,60 @@
+<html>
+	<head>
+		<title>TANK GAME</title>
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="glMatrix-0.9.5.min.js"></script>
+		<script src="tedge.js"></script>
+		<script src="meshes.js"></script>		
+		<script src="game.js"></script>
+		<!-- standard textured shaders -->
+		<script id="shader-fs" type="x-shader/x-fragment">
+		  #ifdef GL_ES
+		  precision highp float;
+		  #endif
+		  
+		  varying vec2 vTextureCoord;
+		  varying vec4 vColor;
+		  varying float vTexScale;
+		  varying float vPulse;
+		  
+		  uniform sampler2D uSampler;
+
+		  void main(void) 
+		  {
+			gl_FragColor = (texture2D(uSampler, vTextureCoord * vTexScale) 
+				+ texture2D(uSampler, vTextureCoord * vTexScale * 10.0) * vPulse)
+				* vColor;
+		  }
+		</script>
+		<script id="shader-vs" type="x-shader/x-vertex">
+		  attribute vec3 aVertexPosition;
+		  attribute vec2 aTextureCoord;
+
+		  uniform mat4 uWMatrix;
+		  uniform mat4 uVMatrix;
+		  uniform mat4 uPMatrix;
+		  
+		  uniform vec4 uColor;
+		  uniform float uTexScale;
+		  uniform float uPulse;
+		  
+		  varying vec2 vTextureCoord;
+		  varying vec4 vColor;
+		  varying float vTexScale;
+		  varying float vPulse;
+
+		  void main(void) {
+			gl_Position = uPMatrix * uVMatrix * uWMatrix * vec4(aVertexPosition, 1.0);
+			vTextureCoord = aTextureCoord;
+			
+			vColor = uColor;
+			vTexScale = uTexScale;
+			vPulse = uPulse;
+		  }
+		</script>		
+	</head>
+	<body onload="run();">
+		<canvas id="game" style="border: none;" width="800" height="600">
+		</canvas>
+	</body>
+</html>
