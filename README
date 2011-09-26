@@ -1,0 +1,8 @@
+A collection of WebGL javascript games. I'm developing these to grow my game engine, tedge.js.
+
+So far just:
+tanks - Multiplayer Spectre-like game.
+
+Credit where due:
+http://socket.io/
+http://code.google.com/p/glmatrix/
