@@ -1,0 +1,146 @@
+2 bit expanded
+function NoiseSampler(density, seed)
+{
+	var primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41];
+	var p1, p2;
+	var j = 13; var k = seed;
+	j = (2*j + k)%256;
+	k = (k*primes[j%primes.length] + k)%256;
+	p1 = (j+k)%256;
+	j = (3*j + k)%256;
+	k = (k*primes[j%primes.length] + k)%256;
+	p2 = (j+k)%256;
+	
+	return function (x, y) {
+		var q = 0;
+		
+		for (var d = 1; d <= density; d++) {
+			var r = 1;
+			x = x/d; y = y/d;
+			//x = Math.floor(x/d) * d;
+			//y = Math.floor(y/d) * d;
+			r += (r%p1) * (x + p1) * (y + p1);
+			r += (r%p2) * (x + p2) * (y + p2);
+			
+			q += (r%256)/density;
+		}
+		return Math.floor(q)%256;
+	};
+}
+
+full form
+function NoiseSampler(density, seed)
+{
+	var primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41];
+	var stream = [];
+	var j = 13; var k = seed;
+	for (var i = 0; i < 25; i++) {
+		j = (j*primes[i%primes.length] + k)%256;
+		k = (k*primes[j%primes.length] + k)%256;
+		stream.push((j+k)%256);
+	}
+	
+	return function (x, y) {
+		var q = 0;
+		
+		for (var d = 1; d <= density; d++) {
+			var r = 1;
+			x = x/d; y = y/d;
+			//x = Math.floor(x/d) * d;
+			//y = Math.floor(y/d) * d;			
+			for (var i = 0; i < stream.length; i++) {
+				r += (r%stream[i]) * (x + stream[i]) * (y + stream[i]);
+			}
+			q += (r%256)/density;
+		}
+		return Math.floor(q)%256;
+	};
+}
+
+grid blur hm
+function NoiseSampler(density, seed)
+{
+	var primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41];
+	var stream = [];
+	var j = 13; var k = seed;
+	for (var i = 0; i < 2; i++) {
+		j = (j*primes[i%primes.length] + k)%256;
+		k = (k*primes[j%primes.length] + k)%256;
+		stream.push((j+k)%256);
+	}
+	
+	return function (x, y) {
+		var q = 0;
+		for (var d = 0; d < density; d++) {
+			var r = 0; var n2 = (2*d+1)*(2*d+1);
+			for (dx = -d; dx <= d; dx++) {
+				for (dy = -d; dy <= d; dy++) {
+					var s = 1;
+					var xx = x + dx; var yy = y + dy;
+					for (var i = 0; i < stream.length; i++) {
+						s += (s%stream[i]) * (xx + stream[i]) * (yy + stream[i]);
+					}
+					r += (s%256)/(n2);
+				}
+			}
+			q += (r%256)/density;
+		}
+		return Math.floor(q)%256;
+	};
+}
+
+// inputs [0, 1], [0, 1]
+// 0..255
+function NoiseSampler(density, seed)
+{
+	var primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41];
+	var p1, p2, p3;
+	var j = 13; var k = seed;
+	j = (2*j + k)%256;
+	k = (k*primes[j%primes.length] + k)%256;
+	p1 = j + k;
+	j = (3*j + k + seed)%256;
+	k = (k*primes[j%primes.length] + k)%256;
+	p2 = j + k;
+	j = (5*j + k + 1)%256;
+	k = (k*primes[j%primes.length] + k)%256;
+	p3 = j + k;
+	
+	function r(x, y) {
+		var r1 = 1 + x*y + x*p1 + y*p1 + p1*p1 + y;
+		var r2 = r1 + (r1%p2) * (x + x*p2 + y*p2 + p2*p2);
+		var r3 = r2 + (r2%p3) * (p2 + x*p3 + y*p3 + p3*p3);
+		return r3%256;
+	}
+	
+	function rdx(y) {
+		// r3dx
+		return ((1 + y + p1) + ((1 + y + p1)%p2) * (1 + p2) 
+			+ (((1 + y + p1) + ((1 + y + p1)%p2) * (1 + p2))%p3)*p3)%256;
+	}
+	
+	function rdy(x) {
+		// r3dy
+		return ((x + p1 + 1) + ((x + p1 + 1)%p2)*p2 
+		+ (((x + p1 + 1) + ((x + p1 + 1)%p2)*p2)%p3)*p3)%256;
+	}
+	
+	function rdxdy(x, y) {	
+		// r3' dx dy
+		return ((y + x + 2*p1 + 1) 
+			+ ((y + x + 2*p1 + 1)%p2) * (1 + 2*p2)
+			+ (((y + x + 2*p1 + 1) + ((y + x + 2*p1 + 1)%p2) * (1 + 2*p2))%p3)*2*p3)%256;
+	}
+	
+	return function(x,y) {
+		var dx = x - Math.floor(x);
+		var dy = y - Math.floor(y);
+		x -= dx; y -= dy;
+		
+		return r(x,y) * (1 - dx) * (1 - dy)
+			//+ r(x+1, y) * dx * (1 - dy)
+			//+ r(x, y+1) * (1 - dx) * dy
+			//+ r(x+1, y+1) * dx * dy
+			+ rdx(y)*dx*(1-dy) + rdy(x)*dy*(1-dx) + rdxdy(x,y)*dx*dy;
+	};
+}

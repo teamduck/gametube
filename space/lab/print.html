@@ -1,0 +1,196 @@
+<html>
+	<head>
+		<title>Tunnel Vision</title>
+		<script>
+var a = !1, m, p, q, r = []; FRAMES = 40; frame = 0; buffers = []; SIZE = 256;
+function t() { return[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] }
+var u = t(), v = t(), w = t();
+u[10] = -1;
+var y, z;
+window.j = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function(e) {
+  window.setTimeout(e, 1E3 / 30)
+};
+function A() {
+  m.clear(m.COLOR_BUFFER_BIT | m.DEPTH_BUFFER_BIT);
+  for(ent in r) {
+    r[ent].f && r[ent].f(v)
+  }
+  y = z;
+  z = (new Date).getTime();
+  var e = (z - y) / 1E3;
+  1 < e && (e = 1);
+  for(ent in r) {
+    r[ent].update && r[ent].update(e)
+  }
+  context.drawImage(p, 0, 0);
+  buffers.push(context.getImageData(0, 0, SIZE, SIZE));
+  frame++;
+  if (frame < FRAMES) window.j(A, p);
+  else print();
+}
+function B(e, n, g, l, b, f) {
+  e.e = e.e.concat(n[g][l]);
+  void 0 === b || void 0 === f ? (e.a.push(g / n.length), e.a.push(l / n[0].length)) : (e.a.push(b / n.length), e.a.push(f / n[0].length))
+}
+function C() {
+  function e(b) {
+    return[Math.sin(8 * b * Math.PI), 80 * b, Math.cos(8 * b * Math.PI)]
+  }
+  for(var n = {}, g = q.createImageData(64, 64), l = m.createTexture(), b = [], f = [], c = 0;20 > c;c++) {
+    b.push([]);
+    f.push([]);
+    for(var d = 0;100 > d;d++) {
+      var h;
+      h = 2 * d / 100 * Math.PI - Math.PI;
+      h = [Math.cos(h), 0, Math.sin(h)];
+      var x = e(c / 20);
+      h = [h[0] + x[0], h[1] + x[1], h[2] + x[2]];
+      f[c][d] = h;
+      b[c][d] = h
+    }
+  }
+  f = {count:3800, e:[], n:[], a:[]};
+  for(c = 0;19 > c;c++) {
+    for(d = 0;100 > d;d++) {
+      B(f, b, c, d), B(f, b, c + 1, d), B(f, b, c, (d + 1) % 100, c, d + 1), B(f, b, c, (d + 1) % 100, c, d + 1), B(f, b, c + 1, d), B(f, b, c + 1, (d + 1) % 100, c + 1, d + 1)
+    }
+  }
+  b = tunnelMesh = f;
+  c = [15, 0, 0, 1, 0, 0];
+  for(d = 0;d < b.a.length;d += 2) {
+    f = b.a[d], h = b.a[d + 1], b.a[d] = c[0] * f + c[1] * h + c[2], b.a[d + 1] = c[3] * f + c[4] * h + c[5]
+  }
+  var k = tunnelMesh;
+  k.buffered || (k.h = m.createBuffer(), m.bindBuffer(m.ARRAY_BUFFER, k.h), m.bufferData(m.ARRAY_BUFFER, new Float32Array(k.e), m.STATIC_DRAW), k.a && (k.d = m.createBuffer(), m.bindBuffer(m.ARRAY_BUFFER, k.d), m.bufferData(m.ARRAY_BUFFER, new Float32Array(k.a), m.STATIC_DRAW)), k.buffered = !0);
+  for(b = 0;64 > b;b++) {
+    for(c = 0;64 > c;c++) {
+      g.data[4 * (c + 64 * b) + 0] = 128 * Math.sin(c / 5 + Math.PI / 1.5) + 127, g.data[4 * (c + 64 * b) + 1] = 128 * Math.sin(c / 5) + 127, g.data[4 * (c + 64 * b) + 2] = 128 * Math.sin(c / 5 - Math.PI / 1.5) + 127, g.data[4 * (c + 64 * b) + 3] = 255
+    }
+  }
+  m.pixelStorei(m.UNPACK_FLIP_Y_WEBGL, !0);
+  m.bindTexture(m.TEXTURE_2D, l);
+  m.texImage2D(m.TEXTURE_2D, 0, m.RGBA, m.RGBA, m.UNSIGNED_BYTE, g);
+  m.texParameteri(m.TEXTURE_2D, m.TEXTURE_MAG_FILTER, m.LINEAR);
+  m.texParameteri(m.TEXTURE_2D, m.TEXTURE_MIN_FILTER, m.LINEAR);
+  m.bindTexture(m.TEXTURE_2D, null);
+  var s = 6;
+  n.update = function(b) {
+    s -= 5.0/FRAMES;
+  };
+  n.f = function(b) {
+    b = s / 10;
+    1 > s && (s += 5);
+    b = e(b);
+    var c = [0, 0, 0];
+    b = [c[0] - b[0], c[1] - b[1], c[2] - b[2]];
+    b = [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, b[0], -b[2], b[1], 1];
+    TEX_SHADER.enable();
+    m.uniformMatrix4fv(TEX_SHADER.i, a, w);
+    m.uniformMatrix4fv(TEX_SHADER.g, a, u);
+    m.activeTexture(m.TEXTURE0);
+    m.bindTexture(m.TEXTURE_2D, l);
+    m.uniform1i(TEX_SHADER.p, 0);
+    c = TEX_SHADER;
+    m.bindBuffer(m.ARRAY_BUFFER, k.h);
+    m.vertexAttribPointer(c.c, 3, m.FLOAT, a, 0, 0);
+    k.d && void 0 !== c.b && (m.bindBuffer(m.ARRAY_BUFFER, k.d), m.vertexAttribPointer(c.b, 2, m.FLOAT, a, 0, 0));
+    m.uniformMatrix4fv(c.m, a, b);
+    m.drawArrays(m.TRIANGLES, 0, 3 * k.count);
+    m.uniformMatrix4fv(TEX_SHADER.g, a, u);
+    TEX_SHADER.disable()
+  };
+  return n
+}
+function run() {
+  p = document.getElementById("game");
+  p.width = SIZE;
+  p.height = SIZE;
+  flags = {preserveDrawingBuffer: true};
+  canvas = document.getElementById("2D");
+  canvas.width = SIZE;
+  canvas.height = SIZE;
+  context = canvas.getContext("2d");
+  try {
+    m = p.getContext("webgl", flags) || p.getContext("experimental-webgl", flags) || p.getContext("webkit-3d", flags) || p.getContext("moz-webgl", flags), m.l = p.width, m.k = p.height
+  }catch(e) {
+  }
+  m || alert("Sorry, WebGL not supported.");
+  try {
+    q = document.getElementById("2D").getContext("2d")
+  }catch(n) {
+  }
+  q || alert("Could not bind 2D context.");
+  a: {
+    var g = m.createShader(m.FRAGMENT_SHADER), l = m.createShader(m.VERTEX_SHADER);
+    m.shaderSource(g, "#ifdef GL_ES\nprecision highp float;\n#endif\nuniform sampler2D uTexture;\nvarying vec2 vTexCoord;\nvoid main(void)\n{\ngl_FragColor = texture2D(uTexture, vTexCoord);\n}\n");
+    m.compileShader(g);
+    if(m.getShaderParameter(g, m.COMPILE_STATUS)) {
+      if(m.shaderSource(l, "attribute vec3 aVertPos;\nattribute vec2 aTexCoord;\nuniform mat4 uWMatrix;\nuniform mat4 uVMatrix;\nuniform mat4 uPMatrix;\nvarying vec2 vTexCoord;\nvoid main(void) {\ngl_Position = uPMatrix * uVMatrix * uWMatrix * vec4(aVertPos, 1.0);\nvTexCoord = aTexCoord;\n}\n"), m.compileShader(l), m.getShaderParameter(l, m.COMPILE_STATUS)) {
+        var b = m.createProgram();
+        m.attachShader(b, g);
+        m.attachShader(b, l);
+        m.linkProgram(b);
+        if(m.getProgramParameter(b, m.LINK_STATUS)) {
+          m.useProgram(b);
+          b.c = m.getAttribLocation(b, "aVertPos");
+          m.enableVertexAttribArray(b.c);
+          b.b = m.getAttribLocation(b, "aTexCoord");
+          m.enableVertexAttribArray(b.b);
+          b.m = m.getUniformLocation(b, "uWMatrix");
+          b.g = m.getUniformLocation(b, "uVMatrix");
+          b.i = m.getUniformLocation(b, "uPMatrix");
+          b.enable = function() {
+            m.enableVertexAttribArray(b.c);
+            m.enableVertexAttribArray(b.b);
+            m.useProgram(b)
+          };
+          b.disable = function() {
+            m.disableVertexAttribArray(b.c);
+            m.disableVertexAttribArray(b.b)
+          };
+          b.disable();
+          TEX_SHADER = b;
+          break a
+        }
+        alert("Error: Could not initialize texture shader.")
+      }else {
+        alert(m.getShaderInfoLog(l))
+      }
+    }else {
+      alert(m.getShaderInfoLog(g))
+    }
+    TEX_SHADER = void 0
+  }
+  m.clearColor(0, 0, 0, 1);
+  m.enable(m.DEPTH_TEST);
+  m.viewport(0, 0, m.l, m.k);
+  w = [1.1, 0, 0, 0, 0, 1.9, 0, 0, 0, 0, -1, -1, 0, 0, -0.6, 0];
+  r.push(C());
+  z = (new Date).getTime();
+  A()
+};
+function print() {
+	frame = 0;
+	while (frame < FRAMES) {
+		context.putImageData(buffers[frame], 0, 0);
+		var img = canvas.toDataURL("image/png");
+		document.write('<img src="'+img+'"/>');
+		frame++;
+	}
+}
+		</script>
+		<style>
+			#game {
+				position: absolute;
+				top: 0;
+				left: 0;
+				border: none;
+			}
+		</style>
+	</head>
+	<body onload="run();">
+		<canvas id="game" width="100%" height="100%">
+		</canvas>
+		<canvas id="2D" style="display: none;">
+	</body>
+</html>

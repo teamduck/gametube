@@ -1,0 +1,517 @@
+<html>
+	<head>
+		<title>Tunnel Vision</title>
+		<script>
+// tedge.js: 3D games in javascript
+// v 0.01
+
+var gl;
+var shader;
+var canvas;
+var context;
+var entities = [];
+
+// graphics
+
+function identity() {return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];}
+
+// VECTOR MATH ////////////////////////////////////////
+function MAX(a,b) { return a > b ? a : b; }
+function MIN(a,b) { return a < b ? a : b; }
+
+function Vector3(x, y, z)
+{
+	if (x === undefined) return [0.0, 0.0, 0.0];
+	return [x, y, z];
+}
+
+function VecCopy(v)
+{
+	return [v[0], v[1], v[2]];
+}
+	
+function VecAdd(a, b)
+{
+	return [a[0]+b[0], a[1]+b[1], a[2]+b[2]];
+}
+
+function VecSub(a, b)
+{
+	return [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
+}
+
+function VecScale(v, s)
+{
+	return [v[0]*s, v[1]*s, v[2]*s];
+}
+
+function VecNormalize(v)
+{
+	var denom = 1.0/Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+	return [v[0]*denom, v[1]*denom, v[2]*denom];	
+}
+
+function VecLength(v)
+{
+	return Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+}
+
+function VecLengthSqr(v)
+{
+	return (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+}
+
+function VecDot(a, b)
+{
+	return (a[0]*b[0] + a[1]*b[1] + a[2]*b[2]);
+}
+
+function VecCross(a, b)
+{
+	return [a[1] * b[2] - a[2] * b[1],
+			a[2] * b[0] - a[0] * b[2],
+			a[0] * b[1] - a[1] * b[0]];
+}
+
+function VecMult(a, b)
+{
+	return [a[0] * b[0], a[1] * b[1], a[2] * b[2]];
+}
+
+
+var vMatrix = identity();
+var wMatrix = identity();
+var pMatrix = identity();
+vMatrix[10] = -1;
+
+var cos = Math.cos;
+var sin = Math.sin;
+var tan = Math.tan;
+var abs = Math.abs;
+
+// timing
+var lastT;
+var curT;
+
+// start the tEdgine
+function run()
+{
+	// init graphics
+	initGL();
+	
+	// init game stuffs
+	gameInit();
+}
+
+//////////////////////////////////////////////////////
+// GRAPHICS
+//////////////////////////////////////////////////////
+
+window.requestAnimFrame = (function() 
+{
+	return window.requestAnimationFrame ||
+		window.webkitRequestAnimationFrame ||
+		window.mozRequestAnimationFrame ||
+		window.oRequestAnimationFrame ||
+		window.msRequestAnimationFrame ||
+		function(/* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
+			window.setTimeout(callback, 1000/30);
+		};
+})();
+
+// startup
+function initGL()
+{
+	// find the canvas
+	canvas = document.getElementById("game");
+	canvas.width = document.body.clientWidth;
+	canvas.height = document.body.clientHeight;
+	
+	// get gl context
+	try {
+		gl = canvas.getContext("webgl") ||
+			canvas.getContext("experimental-webgl") ||
+			canvas.getContext("webkit-3d") ||
+			canvas.getContext("moz-webgl");
+		gl.viewportWidth = canvas.width;
+		gl.viewportHeight = canvas.height;
+	} catch (e) {
+	}
+	if (!gl)
+	{
+		alert("Sorry, WebGL not supported.");
+	}
+	
+	// get 2D context
+	try {
+		context = document.getElementById("2D").getContext("2d");
+	} catch (e) {
+	}
+	if (!context)
+	{
+		alert("Could not bind 2D context.");
+	}
+	
+	// load & compile shaders
+	initShaders();
+	
+	// set up gl default state
+	gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	gl.enable(gl.DEPTH_TEST);
+	
+	// perspective
+	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);	
+	pMatrix = [1.1,0,0,0,0,1.9,0,0,0,0,-1.0,-1,0,0,-0.6,0];
+}
+
+// render loop
+function render()
+{	
+	// clear screen
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	
+	// render everything
+	for (ent in entities)
+	{	
+		if (entities[ent].render)
+		{
+			entities[ent].render(wMatrix);
+		}
+	}
+}
+
+// TEXTURES: /////////////////////////////////////////
+
+function StoreTexture(texture, bitmap) 
+{
+	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	gl.bindTexture(gl.TEXTURE_2D, null);
+}
+
+// MESHES: /////////////////////////////////////////
+
+// load json mesh into video memory
+function BufferMesh(mesh)
+{
+	// prevent duplicate loading
+	if (mesh.buffered)
+		return mesh;
+	
+	mesh.vert_buf = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vert_buf);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.vertices), gl.STATIC_DRAW);
+	
+	if (mesh.uvs)
+	{
+		mesh.uv_buf = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, mesh.uv_buf);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.uvs), gl.STATIC_DRAW);
+	}
+	
+	mesh.buffered = true;
+	return mesh;
+}
+
+function DrawMesh(mesh, worldMtx, shader)
+{
+	// set vertex position array buffer
+	gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vert_buf);
+	gl.vertexAttribPointer(shader.vertPos, 3, gl.FLOAT, false, 0, 0);
+	
+	// set UV array buffer
+	if (mesh.uv_buf && shader.texCoord !== undefined)
+	{
+		gl.bindBuffer(gl.ARRAY_BUFFER, mesh.uv_buf);
+		gl.vertexAttribPointer(shader.texCoord, 2, gl.FLOAT, false, 0, 0);
+	}
+	
+	// set world matrix
+	gl.uniformMatrix4fv(shader.wMatrix, false, worldMtx);
+
+	// do it
+	gl.drawArrays(gl.TRIANGLES, 0, mesh.count * 3);
+}
+
+// more mesh functions
+// [u'] = [a b][u] + [e]
+// [v'] = [c d][v] + [f]
+function MeshTransformUVs(mesh, affineMatrix) {
+	for (var i = 0; i < mesh.uvs.length; i+=2) {
+		var u = mesh.uvs[i]; var v = mesh.uvs[i+1];
+		mesh.uvs[i] = affineMatrix[0]*u + affineMatrix[1]*v + affineMatrix[2];
+		mesh.uvs[i+1] = affineMatrix[3]*u + affineMatrix[4]*v + affineMatrix[5];
+	}
+}
+
+
+
+
+//////////////////////////////////////////////////////
+// GAME
+//////////////////////////////////////////////////////
+
+function startGame()
+{
+	// set the clock
+	curT = new Date().getTime();
+	gameLoop();
+}
+
+// main loop
+function gameLoop()
+{
+	window.requestAnimFrame(gameLoop, canvas);
+	render();
+
+	lastT = curT;
+	curT = new Date().getTime();
+	var dt = (curT - lastT)/1000.0;
+	
+	if (dt > 1.0)
+		dt = 1.0;
+	
+	update(dt);
+	//setTimeout(gameLoop, 0);
+}
+
+function update(dt)
+{	
+	for (ent in entities)
+	{
+		if (entities[ent].update)
+		{
+			entities[ent].update(dt);
+		}
+	}
+}
+
+function addPoint(mesh, values, x, z, wrap, u, v)
+{
+	mesh.vertices = mesh.vertices.concat(values[x][z]);
+	if (u === undefined || v === undefined) {
+		mesh.uvs.push(x / (values.length));
+		mesh.uvs.push(z / (values[0].length));
+	} else {
+		mesh.uvs.push(u / (values.length));
+		mesh.uvs.push(v / (values[0].length));
+	}
+}
+
+function Math2MeshCylinder(maths, slices, cuts)
+{
+	var values = [];
+	var normals = [];
+	for (var slice = 0; slice < slices; slice++)
+	{
+		values.push([]);
+		normals.push([]);
+		for (var cut = 0; cut < cuts; cut++)
+		{
+			var phi = cut/cuts*Math.PI*2 - Math.PI;
+			// takes an angle and t parameter [0,1] and returns a vertex
+			var x = maths(phi, slice/slices);
+			normals[slice][cut] = x;
+			values[slice][cut] = x;
+		}
+	}
+	
+	
+	var mesh = {};
+	mesh.count = (slices - 1) * cuts * 2
+	mesh.vertices = [];
+	mesh.normals = [];
+	mesh.uvs = [];
+	for (var slice = 0; slice < slices - 1; slice++)
+		for (var cut = 0; cut < cuts; cut++)
+		{
+			addPoint(mesh, values, slice,   cut, normals);
+			addPoint(mesh, values, slice+1, cut, normals);
+			addPoint(mesh, values, slice,   (cut+1)%cuts, normals, slice, cut+1);
+			addPoint(mesh, values, slice,   (cut+1)%cuts, normals, slice, cut+1);
+			addPoint(mesh, values, slice+1, cut, normals);
+			addPoint(mesh, values, slice+1, (cut+1)%cuts, normals, slice+1, cut+1);
+		}
+	
+	return mesh;
+}
+
+
+
+// team duck 4 lyfe
+
+// SHADERS: //////////////////////////////////////////
+
+var TEX_PIXEL_SHADER = 
+"#ifdef GL_ES\n" +
+"precision highp float;\n" +
+"#endif\n" +
+"uniform sampler2D uTexture;\n" +
+"varying vec2 vTexCoord;\n" +
+"void main(void)\n" +
+"{\n" +
+"gl_FragColor = texture2D(uTexture, vTexCoord);\n" + 
+"}\n";
+
+var TEX_VERT_SHADER = 
+"attribute vec3 aVertPos;\n" +
+"attribute vec2 aTexCoord;\n" +
+"uniform mat4 uWMatrix;\n" +
+"uniform mat4 uVMatrix;\n" +
+"uniform mat4 uPMatrix;\n" +
+"varying vec2 vTexCoord;\n" +
+"void main(void) {\n" +
+"gl_Position = uPMatrix * uVMatrix * uWMatrix * vec4(aVertPos, 1.0);\n" +
+"vTexCoord = aTexCoord;\n" +
+"}\n";
+
+
+function TextureShader()
+{
+	var pShader = gl.createShader(gl.FRAGMENT_SHADER);
+	var vShader = gl.createShader(gl.VERTEX_SHADER);
+	
+	gl.shaderSource(pShader, TEX_PIXEL_SHADER);
+	gl.compileShader(pShader);
+	if (!gl.getShaderParameter(pShader, gl.COMPILE_STATUS))
+	{
+		alert(gl.getShaderInfoLog(pShader));
+		return;
+	}
+	
+	gl.shaderSource(vShader, TEX_VERT_SHADER);
+	gl.compileShader(vShader);
+	if (!gl.getShaderParameter(vShader, gl.COMPILE_STATUS))
+	{
+		alert(gl.getShaderInfoLog(vShader));
+		return;
+	}
+	
+	var shader = gl.createProgram();
+	gl.attachShader(shader, pShader);
+	gl.attachShader(shader, vShader);
+	gl.linkProgram(shader);
+	if (!gl.getProgramParameter(shader, gl.LINK_STATUS))
+	{
+		alert("Error: Could not initialize texture shader.");
+		return;
+	}
+	
+	gl.useProgram(shader);
+	
+	shader.vertPos = gl.getAttribLocation(shader, "aVertPos");
+	gl.enableVertexAttribArray(shader.vertPos);
+	shader.texCoord = gl.getAttribLocation(shader, "aTexCoord");
+	gl.enableVertexAttribArray(shader.texCoord);
+	shader.wMatrix = gl.getUniformLocation(shader, "uWMatrix");	
+	shader.vMatrix = gl.getUniformLocation(shader, "uVMatrix");	
+	shader.pMatrix = gl.getUniformLocation(shader, "uPMatrix");
+	
+	shader.enable = function () {
+		gl.enableVertexAttribArray(shader.vertPos);
+		gl.enableVertexAttribArray(shader.texCoord);
+		gl.useProgram(shader);
+	}
+	shader.disable = function () {
+		gl.disableVertexAttribArray(shader.vertPos);
+		gl.disableVertexAttribArray(shader.texCoord);
+	}
+	
+	shader.disable();
+	return shader;
+}
+
+// shaders
+function initShaders()
+{
+	TEX_SHADER = TextureShader();
+}		
+
+
+function RainbowTunnel() 
+{
+	var r = {};
+	var WIDTH = 64; var HEIGHT = 64;
+	var bitmap = context.createImageData(WIDTH, HEIGHT);
+	var texture = gl.createTexture();
+	
+	function path(t) {
+		return [Math.sin(t*8*Math.PI), t*80, Math.cos(t*8*Math.PI)];
+	}
+	
+	tunnelMesh = Math2MeshCylinder(function (theta, t) {
+		return VecAdd([Math.cos(theta), 0, Math.sin(theta)], path(t));
+	}, 20, 100);
+	MeshTransformUVs(tunnelMesh, [15, 0, 0, 1, 0, 0]);
+	var mesh = BufferMesh(tunnelMesh);
+	
+	// image series
+	for (var y = 0; y < HEIGHT; y++) {
+		for (var x = 0; x < WIDTH; x++) {
+			bitmap.data[4*(x+y*WIDTH)+0] = Math.sin(x/5+Math.PI/1.5)*128 + 127;
+			bitmap.data[4*(x+y*WIDTH)+1] = Math.sin(x/5)*128 + 127;
+			bitmap.data[4*(x+y*WIDTH)+2] = Math.sin(x/5-Math.PI/1.5)*128 + 127;
+			bitmap.data[4*(x+y*WIDTH)+3] = 255;
+		}
+	}
+	// store in vram
+	StoreTexture(texture, bitmap);
+	
+	var t = 6;
+	r.update = function (dt) {t -= dt;}
+	
+	r.render = function (mtx) {
+		debugger;
+		// sprite
+		var z = t/10.0;
+		if (t < 1) t += 5;
+		
+		var translation = VecSub([0,0,0], path(z));
+		var mtx = [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, translation[0], -translation[2], translation[1], 1.0];
+	
+		// set up texture shader
+		TEX_SHADER.enable();
+		gl.uniformMatrix4fv(TEX_SHADER.pMatrix, false, pMatrix);
+		gl.uniformMatrix4fv(TEX_SHADER.vMatrix, false, vMatrix);
+
+		// bind texture
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+		gl.uniform1i(TEX_SHADER.samplerUniform, 0);
+		DrawMesh(mesh, mtx, TEX_SHADER);
+		
+		// draw
+		gl.uniformMatrix4fv(TEX_SHADER.vMatrix, false, vMatrix);
+		TEX_SHADER.disable();
+	}
+	
+	return r;
+}
+
+// main
+function gameInit()
+{
+	entities.push(RainbowTunnel());
+	
+	// hand over control to tedge / tedge server enterprise
+	startGame();
+}
+		</script>
+		<style>
+			#game {
+				position: absolute;
+				top: 0;
+				left: 0;
+				border: none;
+			}
+		</style>
+	</head>
+	<body onload="run();">
+		<canvas id="game" width="100%" height="100%">
+		</canvas>
+		<canvas id="2D" style="display: none;">
+	</body>
+</html>
