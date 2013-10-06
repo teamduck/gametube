@@ -13,7 +13,7 @@ var url 	= require('url');
 var sio		= require('socket.io');
 
 // CONSTANTS /////////////////////////////////////////////////////////////////
-var PORT	= 8080;
+var PORT	= 80;
 
 // DATA STRUCTURES ///////////////////////////////////////////////////////////
 var uid		= 1;	// unique id counter
@@ -66,7 +66,7 @@ function staticFileHandler(filename)
 	}	
 	
 	var header = {
-		"Server": 			"halo-infinity",
+		"Server": 			"tank-game",
 		"ETag": 			etag,
 		"Content-Type": 	content_type,
 		"Content-Length": 	file.length
@@ -97,7 +97,7 @@ function listFile(file) { handler[file] = staticFileHandler(file); }
 
 // list of files on the server
 handler["index.html"] 	= root;
-//listFile("favicon.ico");
+listFile("favicon.ico");
 listFile("server.js");
 listFile("game.js");
 listFile("tedge.js");
@@ -160,7 +160,6 @@ io.sockets.on('connection', function(client)
 	client.on('disconnect', function()
 	{
 		delete clients[user_id];
-		// RemovePlayer(user_id);
 	});
 	
 	// begin the handshake

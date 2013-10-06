@@ -1,0 +1,14 @@
+{
+  "name": "tanks",
+  "subdomain": "cybertanks",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "version": "1.0.0-2",
+  "dependencies": {
+    "socket.io": "*"
+  },
+  "engines": {
+    "node": "0.8.x"
+  }
+}

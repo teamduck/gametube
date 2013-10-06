@@ -61,6 +61,8 @@ function initGL()
 {
 	// find the canvas
 	canvas = document.getElementById("game");
+	canvas.width = document.body.clientWidth;
+	canvas.height = document.body.clientHeight;
 	
 	// get gl context
 	try {
@@ -86,7 +88,7 @@ function initGL()
 	
 	// perspective
 	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);	
-	mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.3, 200.0, pMatrix);
+	mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.3, 400.0, pMatrix);
 	gl.uniformMatrix4fv(shader.pMatrixUniform, false, pMatrix);
 	
 	// shader default state
@@ -349,7 +351,7 @@ function gameLoop()
     var dt = (curT - lastT)/1000.0;
     
     if (dt > 1.0)
-        dt = 1.0;
+        dt = 0.25;
 	
 	update(dt);
 	//setTimeout(gameLoop, 0);
