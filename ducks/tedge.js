@@ -706,4 +706,4 @@ function createTrackingCamera(target)
 	return camera;
 }
 
-// team duck 4 lyfe
+// team duck
