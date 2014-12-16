@@ -1,0 +1,221 @@
+TEDGE PROJECT QUICK REFERENCE
+=================================
+=================================
+
+
+csg.js:
+	200 lines and 3 functions
+	
+	function LineIntersection(lineVertex, lineVector, pointA, pointB)
+	function LineOverlap(segmentA, segmentB, lineVector)
+	function CSG()
+
+
+dev.js:
+	65 lines and 1 function
+	
+	function TextSprite(text, style, font, x, y)
+
+
+game.js:
+	959 lines and 16 functions
+	
+	function Box(position, rotation)
+	function SpaceBox()
+	function Map()
+	function transformPosition(v)
+	function transformRotation(v, q)
+	function Player(puid)
+	function PlasmaBolt(shooter, pos, rotation)
+	function ScorchMark(pos, normal)
+	function Tubes(pos)
+	function EnergyCore()
+	function Tree(pos)
+	function Snake(pos)
+	function BlobMonster(pos)
+	function HelmetDisplay()
+	function gameInit()
+	function finishedLoading()
+
+
+glMatrix-0.9.5.min.js:
+	33 lines and 0 functions
+	
+
+
+meshes.js:
+	147 lines and 4 functions
+	
+	function GetMarkMesh()
+	function BlobMesh()
+	function PlasmaGunMesh(transform)
+	function ModelViewer()
+
+
+particles.js:
+	225 lines and 3 functions
+	
+	function ParticleGenerator()
+	function FireEffect(pos)
+	function Explosion(pos)
+
+
+physics.js:
+	1043 lines and 63 functions
+	
+	function MAX(a,b)
+	function MIN(a,b)
+	function MOD(a,b)
+	function Vector3(x, y, z)
+	function VecCopy(v)
+	function VecAdd(a, b, c)
+	function VecAdd(a, b)
+	function VecSub(a, b)
+	function VecScale(v, s)
+	function VecNormalize(v)
+	function VecLength(v)
+	function VecLengthSqr(v)
+	function VecDot(a, b)
+	function VecCross(a, b)
+	function VecMult(a, b)
+	function VecRotate(v, q)
+	function Quat(w, x, y, z)
+	function QuatInverse(q)
+	function QuatFromVectors(a, b)
+	function QuatNormalize(q)
+	function QuatMult(a, b)
+	function QuatXYZ(pitch, yaw, roll)
+	function QuatSlerp(start, end, alpha)
+	function Matrix4()
+	function Mat4List(m)
+	function Mat4Scale(x, y, z)
+	function Mat4Translate(x, y, z)
+	function Mat4FromVectors(right, up, forward)
+	function Mat4World(pos, rot)
+	function Mat4Rotate(rot)
+	function Mat4TransformPoints(points, mtx)
+	function Mat4TransformPoint(point, mtx)
+	function Mat3TransformPoints(points, mtx)
+	function Mat3TransformPoint(point, mtx)
+	function Mat4Mult(a, b)
+	function Mat4Determinant(a)
+	function Mat4Transpose(m)
+	function Mat4Inverse(a)
+	function BBCopy(bb)
+	function BBJoin(bb1, bb2)
+	function BBAddPoint(bb, point)
+	function BBTestPoint(bb, point)
+	function BBTestBB(bb1, bb2)
+	function BBTestRay(box, origin, dir, t0, t1)
+	function BBFromMesh(verts)
+	function DrawBoundingBox(bb)
+	function BBSize(bb)
+	function BBCenter(bb)
+	function BBContains(big, small)
+	function BBCut(bb, axis)
+	function BBTransform(bb, m)
+	function Prune(vertices, bb)
+	function Octree(vertices, rootBB)
+	function PhysicalEntity(e, mesh, dynamic)
+	function Physics(dt)
+	function checkCollision(objA, objB)
+	function sphereSphereCollision(objA, objB)
+	function geometryGeometryCollision(objA, objB)
+	function geometrySphereCollision(geom, sphere)
+	function sphereGeometryCollision(sphere, geom)
+	function SignedDistToPlane(point, normal, planeConst)
+	function PointIsInTriangle(point, tri)
+	function ClosestPointOnLine(point, lineA, lineB)
+
+
+shaders.js:
+	421 lines and 8 functions
+	
+	function StandardShader()
+	function TextureShader()
+	function AnimationShader()
+	function OrthogonalProjection()
+	function NormalProjection()
+	function StaticMatrix(vMatrix)
+	function FixedMatrix(vMatrix)
+	function initShaders()
+
+
+tedge.js:
+	1259 lines and 47 functions
+	
+	function run()
+	function Load(constructorList, callback)
+	function LoadInstance()
+	function connect()
+	function receive(type, arg)
+	function receiveAll(type, N, arg)
+	function receiveNew(type, arg)
+	function initGL()
+	function render()
+	function loadTexture(file)
+	function setTexture(texture)
+	function handleLoadedTexture(texture)
+	function StoreTexture(texture, bitmap)
+	function MakeTexture(shader, size)
+	function UpdateTexture(texture, shader)
+	function PackTexture(shaders, size)
+	function BufferMesh(mesh)
+	function UpdateMesh(mesh)
+	function DrawMesh(mesh, worldMtx, shader, wireframe)
+	function CloneMesh(mesh)
+	function TransformMesh(mesh, mtx)
+	function TransformMeshNonlinear(mesh, transformFunction)
+	function TransformMeshUVs(mesh, affineMatrix)
+	function InputtingEntity(e, player)
+	function onKeyDown(evt)
+	function onKeyUp(evt)
+	function onMouseDown(evt)
+	function onMouseUp(evt)
+	function onMouseMove(evt)
+	function startGame()
+	function gameLoop()
+	function update(dt)
+	function removeEntity(e)
+	function StaticEntity(mesh, mdlMtx)
+	function DynamicEntity(origMesh, mdlMtx)
+	function addPoint(mesh, values, x, z, wrap, u, v)
+	function Math2Mesh(maths, xrange, zrange, quality)
+	function Math2MeshSphere(maths, slices, cuts)
+	function Math2MeshCylinder(maths, slices, cuts, caps)
+	function Math2MeshTunnel(maths, slices, cuts, caps)
+	function Math2MeshPath(path, cuts)
+	function SimplePhysics(p, dt)
+	function FPSCounter()
+	function LoadingScreen()
+	function Camera(vector)
+	function TrackingCamera(target)
+	function FPSCamera()
+
+
+textures.js:
+	382 lines and 20 functions
+	
+	function CrateTexture()
+	function WoodGrainTexture()
+	function LeafTexture()
+	function HazardTexture()
+	function PanelTexture()
+	function SteelGridTexture()
+	function CheckeredTexture()
+	function DeepPurpleTexture()
+	function FunHouseTexture()
+	function CorrugatedSteelTexture()
+	function HazardSteelTexture()
+	function LightParticleTexture()
+	function GetParticleTexture()
+	function HexagonalTexture()
+	function HelmetTexture()
+	function TargettingTexture()
+	function SpaceBoxTexture(face)
+	function BlobTexture()
+	function PlasmaGunTexture()
+	function TextureViewer()
+
+
+4734 lines and 165 functions for the entire project. Total filesize: 133.537kb:

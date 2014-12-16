@@ -1,0 +1,70 @@
+Game Framework
+------------------
+
+make a level in some fancy program
+this includes geometry, textures, and material properties
+also has spawn points and arguments for different entities / generators / triggers
+
+loading... screen
+
+load this into a root tree object, add the geometry to the collision engine
+initialize all the entities from the map
+these all have specific models / textures / shaders bound to them
+and are either static, dynamic, or invisible
+this means render() is taken care of with a model {} object
+and collision / "physics" is good to go
+update controls game logic & input, for the player(s) and mobs, and animation states
+enemy generators can pump out instances of entities
+particle generators, etc
+when cinematics are triggered, add black bars, swap to a different camera and queue a bunch of animations
+	also disable input
+reset stuff afterward or load a new level (empty entity list, unbuffer almost everything)
+
+
+
+for multiplayer...
+	player characters are controlled locally, and have their essential state is broadcast
+	one player is the host, others are designated clients, and there is a heartbeat of game state
+		which means all the essential info (location, health) of mobs
+		mob.pos,vel		mob.health		mob.color	
+		mob.addProperty(health);		mob.setProperty(health, 10);	mob.setProperty(health, health-1);
+		networkHeartbeat() { /* send broadcasts for all properties that changed */ }
+	events like a monster dying are also sent out and probably need a response
+			thisMob.gameEvent("dead");	cinematic.gameEvent("nextScene");
+			entity.gameEvent = function (tag) { if (host) -> broadcast, call handler; else wait for event to call }
+	if the host disconnects, one of the other players becomes the host
+	
+
+
+some_editor.3Dfile.compile =>
+
+game = {
+	title: "rift",
+	maps: {
+		point_insertion: {},
+		fusion_lab: {},
+		tiberium_research: {},
+		nikai_office: {},
+		aqua: {}
+	},
+	entities: {
+		genericPlayerGuy: {},
+		fpsCamera: tedgeFpsCamera,
+		randomNPC: animatedDude(scientist_model),
+		flyingRobot: {},
+		sexyAIgirl: animatedDude(hot_chick_model, glowy_shader),
+		environmentalHazard: {},
+		boss: energySpaceWorm,
+		key: collectyThing(key_mesh),
+		nextSceneCinematic: shows up after you kill the boss, pans camera around the hero wherever he is and plays music
+	},
+	meshes: {
+	
+	},
+	textures: {
+	
+	}
+};
+
+
+

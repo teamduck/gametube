@@ -1,0 +1,26 @@
+elevators
+windows
+gun rooms
+hallway
+upper floor
+lower hangar
+space ship
+
+assault rifle
+laser blaster
+daft punk robot police
+wall crawlers
+probes
+boss battle
+
+compound model
+multi texture
+blended animations
+
+lounge
+arcade machine
+computer lab
+
+asteroids crashing through hull
+
+collectible items?
