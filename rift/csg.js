@@ -190,8 +190,36 @@ function CSG() {
 			var mesh = {vertices: csg.mesh.vertices, count: csg.mesh.count};
 			if (csg.mesh.normals.length) mesh.normals = csg.mesh.normals;
 			if (csg.mesh.uvs.length) mesh.uvs = csg.mesh.uvs;
-			if (transform)
+			if (transform) {
 				mesh = TransformMesh(mesh, transform);
+                Mat3TransformPoints(mesh.normals, transform);
+            }
+            if (mesh.normals) {
+/*
+                var k;
+                for (k = 0; k < mesh.normals.length; k += 9)
+                {
+//                  var V = VecNormalize([mesh.normals[k+0],
+//                                          mesh.normals[k+1],
+//                                          mesh.normals[k+2]]); 
+
+                    var a = Vector3(mesh.vertices[k], mesh.vertices[k+1], mesh.vertices[k+2]);
+                    var b = Vector3(mesh.vertices[k+3], mesh.vertices[k+4], mesh.vertices[k+5]);
+                    var c = Vector3(mesh.vertices[k+6], mesh.vertices[k+7], mesh.vertices[k+8]);
+                    var V = VecNormalize(VecCross(VecSub(a, b), VecSub(b, c)));
+                    
+                    mesh.normals[k+0] = V[0];
+                    mesh.normals[k+1] = V[1];
+                    mesh.normals[k+2] = V[2];
+                    mesh.normals[k+3] = V[0];
+                    mesh.normals[k+4] = V[1];
+                    mesh.normals[k+5] = V[2];
+                    mesh.normals[k+6] = V[0];
+                    mesh.normals[k+7] = V[1];
+                    mesh.normals[k+8] = V[2];
+                }
+*/
+            }
 			return BufferMesh(mesh);
 		}
 	};

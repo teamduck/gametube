@@ -38,6 +38,10 @@ function run()
 {
 	// init graphics
 	initGL();
+
+    // mesh stuff
+    ReCalculateNormals(BOX_MESH);
+    ReCalculateNormals(SQUARE_MESH);
 	
 	// init input
 	document.onkeydown = onKeyDown;
@@ -153,8 +157,11 @@ function initGL()
 {
 	// find the canvas
 	canvas = document.getElementById("game");
-	canvas.width = 800;//document.body.clientWidth;
-	canvas.height = 600;//document.body.clientHeight;
+	//canvas.width = 800;
+	//canvas.height = 600;
+	canvas.width = document.body.clientWidth;
+	canvas.height = document.body.clientHeight;
+
 	
 	// get gl context
 	try {
@@ -493,7 +500,7 @@ function CloneMesh(mesh) {
 function TransformMesh(mesh, mtx)
 {
 	mesh.vertices = Mat4TransformPoints(mesh.vertices, mtx);
-	//mesh.normals = Mat3TransformPoints(mesh.normals, mtx);
+	mesh.normals = Mat3TransformPoints(mesh.normals, mtx);
 	return mesh;
 }
 
@@ -511,6 +518,35 @@ function TransformMeshNonlinear(mesh, transformFunction)
 		mesh.vertices[i+2] = transformed[2];
 	}
 	return mesh;
+}
+
+function ReCalculateNormals(mesh)
+{
+    if (mesh.normals) {
+        var k;
+        for (k = 0; k < mesh.normals.length; k += 9)
+        {
+/*                  var V = VecNormalize([mesh.normals[k+0],
+                                  mesh.normals[k+1],
+                                  mesh.normals[k+2]]); */
+
+            var a = Vector3(mesh.vertices[k], mesh.vertices[k+1], mesh.vertices[k+2]);
+            var b = Vector3(mesh.vertices[k+3], mesh.vertices[k+4], mesh.vertices[k+5]);
+            var c = Vector3(mesh.vertices[k+6], mesh.vertices[k+7], mesh.vertices[k+8]);
+            var V = VecNormalize(VecCross(VecSub(a, b), VecSub(a, c)));
+            
+            mesh.normals[k+0] = V[0];
+            mesh.normals[k+1] = V[1];
+            mesh.normals[k+2] = V[2];
+            mesh.normals[k+3] = V[0];
+            mesh.normals[k+4] = V[1];
+            mesh.normals[k+5] = V[2];
+            mesh.normals[k+6] = V[0];
+            mesh.normals[k+7] = V[1];
+            mesh.normals[k+8] = V[2];
+        }
+    }
+    return mesh;
 }
 
 // more mesh functions
@@ -699,15 +735,25 @@ function StaticEntity(mesh, mdlMtx)
 	
 	e = PhysicalEntity(e, mesh, false);
 	e.shader = STD_SHADER;
+    if (e.texture !== undefined) e.shader = TEX_SHADER;
 	
 	e.render = function()
 	{
+//        if (e.shader) e.shader.enable(e.texture);
+//        DrawMesh(e.mesh, Mat4List(e.matrix), e.shader);
+
 		if (e.texture !== undefined) {
-			TEX_SHADER.enable(e.texture);
-			DrawMesh(e.mesh, Mat4List(e.matrix), TEX_SHADER);
+//            if (e.mesh.normals !== undefined) {
+//    			TEX_SHADER.enable(e.texture);
+//    			DrawMesh(e.mesh, Mat4List(e.matrix), TEX_SHADER);
+//            } else {
+                LIT_TEX_SHADER.enable(e.texture);
+                DrawMesh(e.mesh, Mat4List(e.matrix), LIT_TEX_SHADER);
+//            }
 		} else {
 			DrawMesh(e.mesh, Mat4List(e.matrix), e.shader);
 		}
+
 	}
 
 	

@@ -93,11 +93,20 @@ function PlasmaGunMesh(transform)
 /* model viewing tool */
 function ModelViewer()
 {
+	puid = connect();
+
 	//var mesh = BufferMesh(BOX_MESH);
 	var model = 0;
 	var models = [
 		PlasmaGunMesh(),
-		BlobMesh(),
+        //BOX_MESH,
+        //Math2MeshSphere(function() {return 0.75;}, 5, 5),
+        Tree().mesh,
+        Snake([0,0,0]).mesh,
+        EnergyCore().mesh,
+        Tubes([0,0,0]).mesh,
+        Map().mesh,
+		//BlobMesh(),
 	];
 	var texture = MakeTexture(CheckeredTexture(), 256);
 	gl.clearColor(0.0, 0.0, 1.0, 1.0);

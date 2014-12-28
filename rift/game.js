@@ -23,6 +23,7 @@ function Box(position, rotation) {
 	var texture = MakeTexture(tex, 128);
 	var b = StaticEntity(BOX_MESH, Mat4Scale(5, 5, 5));
 	b.texture = texture;
+//    b.shader = TEX_SHADER;
 	
 	if (position) {
 		b.pos = position;
@@ -133,6 +134,10 @@ function Map()
 	var floorTile = TransformMesh(CloneMesh(SQUARE_MESH), 
 			Mat4Mult(Mat4World(Vector3(0, 0, 0), QuatXYZ(Math.PI/2,0,0)), 
 					Mat4Scale(map.size/2)));
+
+    var ceilTile = TransformMesh(CloneMesh(SQUARE_MESH),
+            Mat4Mult(Mat4World(Vector3(0, 0, 0), QuatXYZ(Math.PI/2,0,0)),
+                    Mat4Scale(-map.size/2)));
 					
 	var wallXTile = TransformMesh(CloneMesh(SQUARE_MESH), 
 			Mat4Mult(Mat4World(Vector3(0, 1, -1), QuatXYZ(0,0,0)), 
@@ -153,6 +158,7 @@ function Map()
 				var matrix = Mat4Translate([x*map.size, z*map.ceilingHeight, y*map.size]);
 				if (grid[x][y][z] & 1) {
 					csg.append(floorTile, matrix);
+//					csg.append(ceilTile, matrix);
 				}
 				if (grid[x][y][z] & 2) {
 					csg.append(wallXTile, matrix);
@@ -164,6 +170,9 @@ function Map()
 		}
 	}
 	var mesh = csg.compile();
+//    console.log("Map: " + mesh.normals.length + " normals");
+//    for (var q = 0; q < mesh.normals.length; q += 3)
+//        console.log(mesh.normals[q] + ", " + mesh.normals[q+1] + ", " + mesh.normals[q+2]);
 	
 	var R = STATION_RADIUS = map.width*map.size/(2*Math.PI);
 	var cylinderize = function (x, y, z) {
@@ -190,11 +199,13 @@ function Map()
 	
 	if (ROTATIONAL_INERTIA) {
 		TransformMeshNonlinear(mesh, transformPosition);
+        ReCalculateNormals(mesh);
 		UpdateMesh(mesh);
 	}
 	
 	gMap = StaticEntity(mesh);
 	gMap.texture = texture;
+//    gMap.shader = LIT_TEX_SHADER;
 	if (ROTATIONAL_INERTIA) {
 		gMap.transformPosition = transformPosition;
 		gMap.transformRotation = transformRotation;
@@ -204,6 +215,7 @@ function Map()
 	}
 	gMap.renderFirst = true;
 	
+    gMap.mesh = mesh;
 	return gMap;
 }
 
@@ -501,11 +513,12 @@ function Tubes(pos)
 		
 	tubes.render = function () {
 		var matrix = Mat4List(tubes.matrix);
-		TEX_SHADER.enable(texture);
-		TEX_SHADER.setColor(flashColor);
-		DrawMesh(mesh, matrix, TEX_SHADER);
+		LIT_TEX_SHADER.enable(texture);
+		LIT_TEX_SHADER.setColor(flashColor);
+		DrawMesh(mesh, matrix, LIT_TEX_SHADER);
 	}
 
+    tubes.mesh = mesh;
 	return tubes;
 }
 
@@ -557,6 +570,7 @@ function EnergyCore() {
 		gl.disable(gl.BLEND);
 	}
 	
+    core.mesh = mesh;
 	return core;
 }
 
@@ -627,6 +641,7 @@ function Tree(pos)
 	
 	tree = StaticEntity(cylinder, Mat4Scale(2, 5, 2));
 	if (pos) tree.pos = pos;
+    tree.mesh = mesh;
 	
 	tree.render = function () {
 		var matrix = Mat4List(Mat4Translate(tree.pos));
@@ -721,6 +736,7 @@ function Snake(pos)
 		}
 	}
 	
+    snake.mesh = mesh;
 	return snake;
 }
 
@@ -911,8 +927,8 @@ function gameInit()
 {
 	puid = connect();
 	
-	//TextureViewer(); return;
-	//ModelViewer(); return;
+    //TextureViewer(); return;
+    //ModelViewer(); return;
 	
 	// receive / create game data
 	Load([

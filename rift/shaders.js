@@ -58,6 +58,68 @@ var TEX_VERT_SHADER =
 "vColor = uColor;\n" +
 "}\n";
 
+/* lit texture */
+var LIT_TEX_PIXEL_SHADER = 
+"#ifdef GL_ES\n" +
+"precision highp float;\n" +
+"#endif\n" +
+"uniform sampler2D uTexture;\n" +
+"varying vec2 vTexCoord;\n" +
+"varying vec4 vColor;\n" +
+"varying vec3 vLighting;\n"+
+"varying vec3 light_vec;\n" +
+"void main(void)\n" +
+"{\n" +
+//"light_vec = normalize(vec3(1.0, -0.5, 1.51));\n" +
+//"light_vec = vec3(0.0, 1.0, 0.0);\n" +
+"if (gl_FrontFacing) { \n" +
+//"gl_FragColor = vec4(vLighting*0.5 + vec3(0.5, 0.5, 0.5), 1.0);\n" +
+"gl_FragColor = vec4(vec3(abs(dot(vLighting, light_vec))), 1.0);\n" +
+"} else {\n" +
+//"gl_FragColor = vec4(-vLighting*0.5 + vec3(0.5, 0.5, 0.5), 1.0);\n" +
+"gl_FragColor = vec4(vec3(abs(dot(vLighting, light_vec))), 1.0);\n" +
+"}\n" + 
+//"gl_FragColor = texture2D(uTexture, vTexCoord) * vColor;\n" + 
+//"gl_FragColor = vec4(vec3(abs(0.5*dot(vLighting, normalize(vec3(1.0, 0.35, 0.121)) + 0.5))), 1.0);\n" +
+//"gl_FragColor = gl_FragColor * gl_FragColor + vec4(0.2, 0.2, 0.2, 0.0);\n" + 
+"gl_FragColor = gl_FragColor * gl_FragColor * gl_FragColor;" +
+"gl_FragColor = gl_FragColor * 0.90 + vec4(0.20, 0.20, 0.20, 0.10);\n" + 
+"gl_FragColor = gl_FragColor * vColor * texture2D(uTexture, vTexCoord);\n" +
+//"gl_FragColor = vec4(abs(vLighting), 1.0);\n" + 
+//"gl_FragColor = gl_FragColor * vColor;\n" +
+//"gl_FragColor = vColor;\n" +
+//"gl_FragColor = vec4(vec3(texture2D(uTexture, vTexCoord) * -vLighting[1]), 1.0);\n" +
+//"gl_FragColor = vColor;\n" + 
+//"gl_FragColor = gl_FragColor * dot(vLighting, vLighting);\n" +
+//"gl_FragColor = gl_FragColor * ((dot(vLighting, vLighting) * 0.5) + (dot(vLighting, vec3(-0.4, 0.4, -0.4)) * 0.7));\n" +
+"}\n";
+
+var LIT_TEX_VERT_SHADER = 
+"attribute vec3 aVertPos;\n" +
+"attribute vec3 aVertNorm;\n" +
+"attribute vec2 aTexCoord;\n" +
+"attribute vec3 aLightVec;\n" +
+"uniform mat4 uWMatrix;\n" +
+"uniform mat4 uVMatrix;\n" +
+"uniform mat4 uPMatrix;\n" +
+"uniform vec4 uColor;\n" +
+"varying vec2 vTexCoord;\n" +
+"varying vec4 vColor;\n" +
+"varying vec3 vLighting;\n" +
+"varying vec3 light_vec;\n" + 
+"void main(void) {\n" +
+"gl_Position = uPMatrix * uVMatrix * uWMatrix * vec4(aVertPos, 1.0);\n" +
+"vTexCoord = aTexCoord;\n" +
+"vColor = uColor;\n" +
+//"vLighting = normalize(aVertPos);\n" +
+"vLighting = normalize(vec3(uWMatrix * vec4(aVertNorm, 0.0)));\n" +
+//"vLighting = normalize(aVertNorm);\n" +  
+//"light_vec = vec3(0.9, -0.2, 0.4);\n" +
+"light_vec = normalize(vec3(-0.115, 0.625, 0.421));\n" +
+//"if (!gl_FrontFacing) vLighting = -vLighting\n" +
+//"vLighting = gl_FrontFacing ? vLighting : -vLighting;\n" +
+"}\n";
+
 /* animated */
 var ANIMATION_PIXEL_SHADER = 
 "#ifdef GL_ES\n" +
@@ -164,6 +226,97 @@ function StandardShader()
 	shader.disable();
 	return shader;
 }
+
+function LitTextureShader()
+{
+	var pShader = gl.createShader(gl.FRAGMENT_SHADER);
+	var vShader = gl.createShader(gl.VERTEX_SHADER);
+	
+	gl.shaderSource(pShader, LIT_TEX_PIXEL_SHADER);
+	gl.compileShader(pShader);
+	if (!gl.getShaderParameter(pShader, gl.COMPILE_STATUS))
+	{
+		alert(gl.getShaderInfoLog(pShader));
+		return;
+	}
+	
+	gl.shaderSource(vShader, LIT_TEX_VERT_SHADER);
+	gl.compileShader(vShader);
+	if (!gl.getShaderParameter(vShader, gl.COMPILE_STATUS))
+	{
+		alert(gl.getShaderInfoLog(vShader));
+		return;
+	}
+	
+	var shader = gl.createProgram();
+	gl.attachShader(shader, pShader);
+	gl.attachShader(shader, vShader);
+	gl.linkProgram(shader);
+	if (!gl.getProgramParameter(shader, gl.LINK_STATUS))
+	{
+		alert("Error: Could not initialize texture shader.");
+		return;
+	}
+	
+	gl.useProgram(shader);
+	
+	shader.vertPos = gl.getAttribLocation(shader, "aVertPos");
+	shader.vertNorm = gl.getAttribLocation(shader, "aVertNorm");
+	shader.texCoord = gl.getAttribLocation(shader, "aTexCoord");
+	shader.wMatrix = gl.getUniformLocation(shader, "uWMatrix");
+	shader.vMatrix = gl.getUniformLocation(shader, "uVMatrix");
+	shader.pMatrix = gl.getUniformLocation(shader, "uPMatrix");
+	
+	shader.color   = gl.getUniformLocation(shader, "uColor");
+	shader.setColor = function(r, g, b, a)
+	{
+		if (r[0] !== undefined)
+		{
+			g = r[1]; b = r[2];
+			if (r[3] !== undefined)
+				a = r[3];
+			r = r[0];
+		}
+		if (a === undefined)
+			a = 1.0;
+		gl.uniform4f(shader.color, r, g, b, a);
+	}
+	shader.setColor([1.0, 1.0, 1.0, 1.0]);
+	
+	shader.enable = function (texture) {
+
+		if (gCurrentShader != shader) {
+			if (gCurrentShader) gCurrentShader.disable();
+			// bind shader attributes
+			gl.enableVertexAttribArray(shader.vertPos);
+			gl.enableVertexAttribArray(shader.vertNorm);
+			gl.enableVertexAttribArray(shader.texCoord);
+			gl.useProgram(shader);
+			// load matrices
+			gl.uniformMatrix4fv(shader.pMatrix, false, pMatrix);
+			gl.uniformMatrix4fv(shader.vMatrix, false, vMatrix);
+		}
+		// bind texture
+		if (texture) {
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gl.TEXTURE_2D, texture);
+			gl.uniform1i(shader.samplerUniform, 0);
+		}
+		//shader.setColor([1.0, 1.0, 1.0, 1.0]);
+		gCurrentShader = shader;
+	}
+	shader.disable = function () {
+		gl.disableVertexAttribArray(shader.vertPos);
+		gl.disableVertexAttribArray(shader.vertNorm);
+		gl.disableVertexAttribArray(shader.texCoord);
+		gCurrentShader = undefined;
+	}
+	
+	shader.disable();
+	return shader;
+}
+
+
 
 function TextureShader()
 {
@@ -414,6 +567,7 @@ function FixedMatrix(vMatrix)
 function initShaders()
 {
 	TEX_SHADER = TextureShader();
+    LIT_TEX_SHADER = LitTextureShader();
 	ANIM_SHADER = AnimationShader();
 	STD_SHADER = StandardShader();
 	STD_SHADER.enable();
