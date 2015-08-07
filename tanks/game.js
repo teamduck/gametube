@@ -841,6 +841,16 @@ function gameInit()
 	}	
 	
 	// rock and roll
-	netConnect();
+	if (!singleplayer) {
+    netConnect();
+  } else {
+    connected = true;
+    connected = true;
+    socket = {json: {send: function(a) { /*alert(a.event);*/ } } };
+  }
 	startGame();
+  
+  if (singleplayer) {
+    netMessage({event: 'hi', id: 1});
+  }
 }
